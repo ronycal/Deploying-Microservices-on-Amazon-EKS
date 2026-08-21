@@ -158,7 +158,7 @@ resource "aws_eks_node_group" "workers" {
   ]
 
   # EC2 instance type used by the Kubernetes worker nodes.
-  instance_types = ["t3.medium"]
+  instance_types = ["t3.micro"]
 
   # Start with two EC2 worker nodes.
   #
@@ -189,4 +189,85 @@ resource "aws_eks_node_group" "workers" {
   tags = {
     Name = "${var.cluster_name}-workers"
   }
+}
+
+# ============================================================
+# EKS Pod Identity Agent
+# ============================================================
+
+# The Pod Identity Agent allows Kubernetes service accounts
+# to assume dedicated AWS IAM roles.
+resource "aws_eks_addon" "pod_identity_agent" {
+  cluster_name = aws_eks_cluster.eks.name
+  addon_name   = "eks-pod-identity-agent"
+
+  depends_on = [
+    aws_eks_node_group.workers
+  ]
+}
+
+
+# ============================================================
+# Amazon EBS CSI Driver IAM Role
+# ============================================================
+
+# Dedicated IAM role used by the EBS CSI controller through
+# EKS Pod Identity.
+resource "aws_iam_role" "ebs_csi_role" {
+  name = "${var.cluster_name}-ebs-csi-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Effect = "Allow"
+
+        Principal = {
+          Service = "pods.eks.amazonaws.com"
+        }
+
+        Action = [
+          "sts:AssumeRole",
+          "sts:TagSession"
+        ]
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.cluster_name}-ebs-csi-role"
+  }
+}
+
+
+# ============================================================
+# EBS CSI IAM Policy
+# ============================================================
+
+# Gives the EBS CSI driver permission to create, attach,
+# detach and manage Amazon EBS volumes.
+resource "aws_iam_role_policy_attachment" "ebs_csi_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicyV2"
+  role       = aws_iam_role.ebs_csi_role.name
+}
+
+
+# ============================================================
+# Amazon EBS CSI Driver
+# ============================================================
+
+resource "aws_eks_addon" "ebs_csi_driver" {
+  cluster_name = aws_eks_cluster.eks.name
+  addon_name   = "aws-ebs-csi-driver"
+
+  pod_identity_association {
+    role_arn        = aws_iam_role.ebs_csi_role.arn
+    service_account = "ebs-csi-controller-sa"
+  }
+
+  depends_on = [
+    aws_eks_addon.pod_identity_agent,
+    aws_iam_role_policy_attachment.ebs_csi_policy
+  ]
 }
