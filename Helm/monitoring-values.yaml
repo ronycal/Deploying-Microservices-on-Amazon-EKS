@@ -1,0 +1,103 @@
+# ============================================================
+# Prometheus + Grafana Monitoring Stack
+# Project: Deploying Microservices on Amazon EKS
+# ============================================================
+
+
+# ============================================================
+# Prometheus
+# ============================================================
+
+prometheus:
+  enabled: true
+
+  prometheusSpec:
+
+    # Keep Prometheus metrics for 7 days.
+    retention: 7d
+
+    # Resource allocation for Prometheus.
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+    # Persistent storage for Prometheus metrics.
+    # Uses the gp3 StorageClass backed by the AWS EBS CSI driver.
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+
+
+# ============================================================
+# Grafana
+# ============================================================
+
+grafana:
+  enabled: true
+
+  # Persistent storage for Grafana dashboards/configuration.
+  persistence:
+    enabled: true
+    type: pvc
+    storageClassName: gp3
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+
+  # Resource allocation for Grafana.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+
+
+# ============================================================
+# Alertmanager
+# ============================================================
+
+alertmanager:
+  enabled: true
+
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+
+# ============================================================
+# kube-state-metrics
+# ============================================================
+
+# Exposes Kubernetes object metrics such as:
+# deployments, pods, nodes, PVCs, and replica counts.
+
+kubeStateMetrics:
+  enabled: true
+
+
+# ============================================================
+# Node Exporter
+# ============================================================
+
+# Collects operating-system/node metrics from every EKS worker,
+# including CPU, memory, filesystem, and network statistics.
+
+nodeExporter:
+  enabled: true

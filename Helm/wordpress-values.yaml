@@ -1,0 +1,64 @@
+# ============================================================
+# WordPress
+# ============================================================
+
+wordpressUsername: admin
+wordpressEmail: admin@example.com
+wordpressFirstName: EKS
+wordpressLastName: Admin
+wordpressBlogName: "WordPress on Amazon EKS"
+
+# Expose WordPress through an AWS load balancer.
+service:
+  type: LoadBalancer
+
+# Store WordPress files on Amazon EBS gp3.
+persistence:
+  enabled: true
+  storageClass: gp3
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+
+# Explicit resource settings for our t3.small workers.
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+
+# ============================================================
+# MariaDB
+# ============================================================
+
+mariadb:
+  enabled: true
+  architecture: standalone
+
+  primary:
+    persistence:
+      enabled: true
+      storageClass: gp3
+      size: 5Gi
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+# ============================================================
+# Horizontal Pod Autoscaling
+# ============================================================
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPU: 60
+  targetMemory: 70      

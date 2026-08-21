@@ -30,3 +30,9 @@ Thumbs.db
 
 # VS Code local settings
 .vscode/
+
+# Temporary Helm files
+.helm-temp/
+
+# Temporary files
+*.tmp
