@@ -158,7 +158,7 @@ resource "aws_eks_node_group" "workers" {
   ]
 
   # EC2 instance type used by the Kubernetes worker nodes.
-  instance_types = ["t3.micro"]
+  instance_types = ["t3.small"]
 
   # Start with two EC2 worker nodes.
   #
@@ -248,7 +248,7 @@ resource "aws_iam_role" "ebs_csi_role" {
 # Gives the EBS CSI driver permission to create, attach,
 # detach and manage Amazon EBS volumes.
 resource "aws_iam_role_policy_attachment" "ebs_csi_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicyV2"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEBSCSIDriverPolicyV2"
   role       = aws_iam_role.ebs_csi_role.name
 }
 
